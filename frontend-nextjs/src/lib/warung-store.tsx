@@ -27,6 +27,8 @@ import type {
   Snapshot,
   StoreStatus,
   Tenant,
+  Transaction,
+  TransactionLine,
 } from "@/lib/types";
 
 type WarungContextValue = {
@@ -339,7 +341,7 @@ export function WarungProvider({ children }: { children: ReactNode }) {
         }),
       clearCart: () => setCart({}),
       checkout: () =>
-        run("checkout", async () => {
+        run("checkout", async (): Promise<ApiResult<CheckoutOutput>> => {
           try {
             const lines = Object.entries(cart).map(([productId, qty]) => ({ productId, qty }));
             const result = await api.checkout(lines);
@@ -349,38 +351,45 @@ export function WarungProvider({ children }: { children: ReactNode }) {
             }
           } catch {}
 
-          const lines = Object.entries(cart).map(([productId, qty]) => {
+          const txLines: TransactionLine[] = Object.entries(cart).map(([productId, qty]) => {
             const product = snapshot.products.find((p) => p.id === productId);
+            const price = product?.price || 0;
+            const hpp = Math.round(price * 0.7);
             return {
               productId,
               name: product?.name || "Barang",
               qty,
-              price: product?.price || 0,
-              subtotal: (product?.price || 0) * qty,
+              price,
+              hpp,
             };
           });
-          const total = lines.reduce((sum, l) => sum + l.subtotal, 0);
+          const total = txLines.reduce((sum, l) => sum + l.price * l.qty, 0);
+          const totalHpp = txLines.reduce((sum, l) => sum + l.hpp * l.qty, 0);
           const now = new Date();
           const day = now.toISOString().slice(0, 10);
-          const newTx = {
+          const newTx: Transaction = {
             id: `RL-${day.replace(/-/g, "")}-${String(snapshot.transactions.length + 1).padStart(3, "0")}`,
             storeId: snapshot.store.id,
             createdAt: now.toISOString(),
             day,
             total,
-            hpp: Math.round(total * 0.7),
-            profit: Math.round(total * 0.3),
-            lines,
+            hpp: totalHpp,
+            profit: total - totalHpp,
+            lines: txLines,
           };
           setSnapshot((prev) => ({
             ...prev,
             transactions: [newTx, ...prev.transactions],
           }));
           setCart({});
+          const output: CheckoutOutput = {
+            transaction: newTx,
+            portions: txLines.map((l) => ({ productId: l.productId, portions: l.qty })),
+          };
           return {
             success: true,
             message: "Transaksi kasir berhasil dicatat.",
-            data: { transaction: newTx, total, hpp: newTx.hpp, profit: newTx.profit },
+            data: output,
             warnings: [],
           };
         }),
