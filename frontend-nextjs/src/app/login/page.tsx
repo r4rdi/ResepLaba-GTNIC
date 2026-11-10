@@ -2,58 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  CheckCircle2,
-  CookingPot,
-  Eye,
-  EyeOff,
-  LogIn,
-  Shield,
-  ShieldCheck,
-  Sparkles,
-  Store,
-  UserPlus,
-  Zap,
-} from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, LogIn, Shield, UserPlus } from "lucide-react";
 import { Button, Field, Input, Select, Tabs } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
 import { useWarung } from "@/lib/warung-store";
-import type { Profile } from "@/lib/types";
-
-const demoProfiles: {
-  id: Profile;
-  name: string;
-  role: string;
-  detail: string;
-  Icon: typeof Store;
-}[] = [
-  {
-    id: "warmindo",
-    name: "Warmindo Cak Budi",
-    role: "F&B / Warung Makan",
-    detail: "Menu racikan, kasir POS cerdas, dan Margin Guard otomatis.",
-    Icon: CookingPot,
-  },
-  {
-    id: "madura",
-    name: "Warung Madura Berkah",
-    role: "Kelontong 24 Jam",
-    detail: "Barang eceran, papan batch FEFO, dan belanja masuk dari nota.",
-    Icon: Store,
-  },
-  {
-    id: "admin",
-    name: "Super Admin Platform",
-    role: "Platform Management",
-    detail: "Pengawasan tenant, alokasi kuota AI, dan starter pack usaha.",
-    Icon: ShieldCheck,
-  },
-];
 
 export default function LoginPage() {
   const router = useRouter();
-  const { selectProfile, login, register } = useWarung();
+  const { login, register } = useWarung();
   const { push } = useToast();
 
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
@@ -61,14 +17,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
 
-  // Error states
-  const [sandboxError, setSandboxError] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [regError, setRegError] = useState("");
-
   // Standard login fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   // Registration fields
   const [regName, setRegName] = useState("");
@@ -78,24 +30,7 @@ export default function LoginPage() {
   const [regPassword, setRegPassword] = useState("");
   const [regWhatsapp, setRegWhatsapp] = useState("");
   const [regPin, setRegPin] = useState("1234");
-
-  const enterDemo = async (profileId: Profile) => {
-    setBusy(true);
-    setSandboxError("");
-    try {
-      const result = await selectProfile(profileId);
-      setBusy(false);
-      if (!result.success) {
-        setSandboxError(result.message || "Gagal menyiapkan contoh warung.");
-        return;
-      }
-      push(`Selamat datang di ${result.data?.store.name ?? "ResepLaba"}.`);
-      router.push(profileId === "admin" ? "/admin" : "/app/pos");
-    } catch {
-      setBusy(false);
-      setSandboxError("Gagal membuka contoh warung.");
-    }
-  };
+  const [regError, setRegError] = useState("");
 
   const handleStandardLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -116,17 +51,8 @@ export default function LoginPage() {
     }
 
     push(`Selamat datang, ${result.data?.store.name ?? "warung"}.`);
-    const isAdmin =
-      (result.data?.tenants && result.data.tenants.length > 0) ||
-      cleanEmail.toLowerCase().includes("admin");
+    const isAdmin = (result.data?.tenants && result.data.tenants.length > 0) || cleanEmail.includes("admin");
     router.push(isAdmin ? "/admin" : "/app/pos");
-  };
-
-  const fillQuickCredential = (credEmail: string, credPass: string = "password") => {
-    setEmail(credEmail);
-    setPassword(credPass);
-    setActiveTab("login");
-    setLoginError("");
   };
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -159,7 +85,7 @@ export default function LoginPage() {
     setBusy(false);
 
     if (!result.success) {
-      setRegError(result.message || "Gagal mendaftarkan warung.");
+      setRegError(result.message || "Gagal mendaftarkan warung. Coba gunakan surel lain.");
       return;
     }
 
@@ -168,7 +94,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="grid min-h-dvh bg-paper lg:grid-cols-[minmax(0,1.15fr)_minmax(440px,.85fr)]">
+    <main className="grid min-h-dvh bg-paper lg:grid-cols-[minmax(0,1.15fr)_minmax(420px,.85fr)]">
       <a
         href="#form-auth"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-sheet focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-primary shadow-lg"
@@ -178,35 +104,26 @@ export default function LoginPage() {
 
       {/* Brand Hero Left Surface */}
       <section className="login-hero-surface relative hidden min-h-dvh flex-col justify-between overflow-hidden p-12 text-white lg:flex xl:p-16">
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-xl bg-white/15 text-sm font-extrabold backdrop-blur-xs">
-              RL
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-extrabold tracking-tight">ResepLaba</span>
-              <span className="rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-200">
-                Edisi Warung UMKM
-              </span>
-            </div>
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-neutral-200">
-            <Sparkles size={13} className="text-emerald-400" aria-hidden />
-            GTNIC 2026 Edition
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="flex size-11 items-center justify-center rounded-xl bg-white/15 text-sm font-extrabold backdrop-blur-xs">
+            RL
           </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-extrabold tracking-tight">ResepLaba</span>
+            <span className="rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-200">
+              Edisi Warung UMKM
+            </span>
+          </div>
         </div>
 
         <div className="relative z-10 max-w-xl pb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300">
-            Smart Inventory & Margin Guard
-          </div>
-          <h1 className="mt-5 text-4xl font-extrabold leading-[1.12] tracking-[-.04em] xl:text-5xl">
+          <h1 className="text-4xl font-extrabold leading-[1.12] tracking-[-.04em] xl:text-5xl">
             Stok terjaga.
             <br />
             Laba lebih pasti.
           </h1>
           <p className="mt-5 text-base leading-7 text-white/85">
-            Platform operasional warung yang menyatukan kasir POS cerdas, pelacakan kedaluwarsa FEFO, dan proteksi margin otomatis agar bisnis UMKM selalu sehat.
+            Aplikasi kasir pintar dan pembukuan praktis untuk warung makan, warkop, dan toko kelontong. Cegah rugi karena barang kedaluwarsa dan amankan keuntungan setiap hari.
           </p>
 
           <div className="mt-8 space-y-4">
@@ -258,99 +175,46 @@ export default function LoginPage() {
         className="mx-auto flex w-full max-w-lg flex-col justify-center px-5 py-8 sm:px-8 lg:px-10"
       >
         {/* Mobile Header */}
-        <div className="mb-6 flex items-center justify-between lg:hidden">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-white">
-              RL
+        <div className="mb-6 flex items-center gap-3 lg:hidden">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-white">
+            RL
+          </span>
+          <div>
+            <span className="text-base font-extrabold">ResepLaba</span>
+            <span className="ml-2 rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary">
+              Warung UMKM
             </span>
-            <div>
-              <span className="text-base font-extrabold">ResepLaba</span>
-              <span className="ml-2 rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary">
-                Warung UMKM
-              </span>
-            </div>
-          </div>
-          <span className="text-[11px] font-semibold text-ink-soft">GTNIC 2026</span>
-        </div>
-
-        {/* 1-CLICK DEMO EVALUATION SECTION */}
-        <div className="mb-6 rounded-2xl border border-line bg-sheet p-5 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-              <Zap size={12} aria-hidden />
-              Akses Sekali Klik
-            </span>
-            <span className="text-[11px] text-ink-soft font-medium">Demo Sandbox</span>
-          </div>
-
-          <h2 className="mt-2 text-lg font-extrabold tracking-tight text-ink">Pilih Mode Warung</h2>
-          <p className="mt-0.5 text-xs text-ink-soft leading-relaxed">
-            Data contoh, menu racikan, dan inventaris telah disiapkan untuk evaluasi juri.
-          </p>
-
-          {sandboxError && (
-            <div role="alert" className="mt-3 rounded-xl border border-critical-border bg-critical-soft p-3 text-xs text-critical font-medium">
-              {sandboxError}
-            </div>
-          )}
-
-          <div className="mt-3 space-y-2">
-            {demoProfiles.map(({ id, name, role, detail, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                disabled={busy}
-                onClick={() => void enterDemo(id)}
-                aria-label={`Masuk sebagai ${name}`}
-                className="group flex w-full items-center gap-3.5 rounded-xl border border-line/70 bg-paper/50 p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-sheet hover:shadow-xs focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-60"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                  <Icon size={18} strokeWidth={2} aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-xs font-bold text-ink">{name}</span>
-                    <span className="rounded-full bg-sheet px-1.5 py-0.2 text-[9px] font-semibold text-ink-soft border border-line/60">
-                      {role}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[11px] leading-tight text-ink-soft line-clamp-1">{detail}</p>
-                </span>
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-line bg-sheet text-ink-soft transition-all group-hover:border-primary group-hover:bg-primary group-hover:text-white">
-                  <ArrowRight size={12} aria-hidden />
-                </div>
-              </button>
-            ))}
           </div>
         </div>
 
-        {/* Tab Switcher for Manual Login / Register */}
-        <div className="mb-5">
+        {/* Tab Switcher */}
+        <div className="mb-6">
           <Tabs
             label="Navigasi Autentikasi"
             value={activeTab}
             onChange={(tab) => {
-              setActiveTab(tab);
+              setActiveTab(tab as "login" | "register");
               setLoginError("");
               setRegError("");
             }}
             items={[
               { id: "login", label: "Masuk Akun" },
-              { id: "register", label: "Daftar Warung Baru" },
+              { id: "register", label: "Buat Warung Baru" },
             ]}
           />
         </div>
 
         {activeTab === "login" ? (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-line bg-sheet p-6 shadow-xs sm:p-7">
-              <div className="mb-5">
-                <h3 className="text-xl font-extrabold tracking-tight sm:text-2xl">Masuk ke Akun Warung</h3>
-                <p className="mt-1 text-xs leading-5 text-ink-soft">
-                  Masukkan surel dan kata sandi toko Anda untuk mulai jualan.
-                </p>
-              </div>
+            <div>
+              <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Masuk ke Akun Warung</h2>
+              <p className="mt-1.5 text-sm leading-6 text-ink-soft">
+                Masukkan surel dan kata sandi toko Anda untuk mulai jualan dan melihat stok.
+              </p>
+            </div>
 
+            {/* Standard Credential Login Form */}
+            <div className="rounded-2xl border border-line bg-sheet p-6 shadow-xs sm:p-7">
               {loginError && (
                 <div role="alert" className="mb-4 rounded-xl border border-critical-border bg-critical-soft p-3 text-xs font-semibold text-critical">
                   {loginError}
@@ -364,7 +228,7 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="budis@resep.laba"
+                    placeholder="contoh: warung@resep.laba"
                     autoComplete="username"
                     required
                   />
@@ -398,34 +262,6 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              {/* Quick credential chips for testers */}
-              <div className="mt-5 border-t border-line pt-4">
-                <p className="text-[11px] font-semibold text-ink-soft">Surel demo untuk uji coba:</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => fillQuickCredential("budis@resep.laba")}
-                    className="rounded-full bg-paper px-2.5 py-1 text-[11px] font-semibold text-ink hover:bg-primary-soft hover:text-primary transition border border-line"
-                  >
-                    🍜 budis@resep.laba
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillQuickCredential("sitiaminah@resep.laba")}
-                    className="rounded-full bg-paper px-2.5 py-1 text-[11px] font-semibold text-ink hover:bg-primary-soft hover:text-primary transition border border-line"
-                  >
-                    🏪 sitiaminah@resep.laba
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillQuickCredential("admin@resep.laba")}
-                    className="rounded-full bg-paper px-2.5 py-1 text-[11px] font-semibold text-ink hover:bg-primary-soft hover:text-primary transition border border-line"
-                  >
-                    🛡️ admin@resep.laba
-                  </button>
-                </div>
-              </div>
-
               <div className="mt-5 border-t border-line pt-4 text-center">
                 <button
                   type="button"
@@ -446,7 +282,7 @@ export default function LoginPage() {
             </div>
           </div>
         ) : (
-          /* REGISTRATION TAB */
+          /* Full Registration Flow */
           <div className="rounded-2xl border border-line bg-sheet p-6 shadow-xs sm:p-7">
             <div className="mb-6">
               <span className="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
