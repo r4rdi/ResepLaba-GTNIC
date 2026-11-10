@@ -1,0 +1,30 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "backend-laravel": {
+      "root": "backend-laravel",
+      "framework": "vite",
+      "outputDirectory": "public"
+    },
+    "frontend-nextjs": {
+      "root": "frontend-nextjs",
+      "framework": "nextjs",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "backend-laravel",
+          "format": "url",
+          "env": "BACKEND_URL"
+        }
+      ]
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend-nextjs"
+      }
+    }
+  ]
+}

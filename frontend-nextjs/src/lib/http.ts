@@ -1,6 +1,22 @@
 import type { ApiResult } from "./types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+export function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
+  }
+  if (typeof window !== "undefined") {
+    const isLocal =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    if (isLocal) {
+      return "http://127.0.0.1:8000/api/v1";
+    }
+    // Remote host (e.g. reseplaba.web.id)
+    return "/api/v1";
+  }
+  return "http://127.0.0.1:8000/api/v1";
+}
+
 const TOKEN_KEY = "reseplaba.token";
 
 let authToken: string | null =
@@ -26,7 +42,7 @@ export function hasAuthToken(): boolean {
   return authToken !== null;
 }
 
-function persistToken(token: string | null) {
+export function persistToken(token: string | null) {
   authToken = token;
   if (typeof window === "undefined") return;
   if (token) window.localStorage.setItem(TOKEN_KEY, token);
@@ -46,8 +62,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (body !== undefined && !isFormData) headers["Content-Type"] = "application/json";
 
   let response: Response;
+  const baseUrl = getApiBaseUrl();
+
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
+    response = await fetch(`${baseUrl}${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
@@ -55,9 +73,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   } catch {
     return {
       success: false,
-      message: "Tidak bisa terhubung ke server. Cek koneksi backend.",
+      message: "Tidak bisa terhubung ke server backend.",
       data: null,
-      warnings: [],
+      warnings: ["BACKEND_OFFLINE"],
     };
   }
 
@@ -82,12 +100,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     // fall through to generic error below
   }
 
-  if (!payload) {
+  if (!payload || !response.ok) {
     return {
       success: false,
-      message: `Server merespons tidak terduga (HTTP ${response.status}).`,
+      message: payload?.message || `Server merespons tidak terduga (HTTP ${response.status}).`,
       data: null,
-      warnings: [],
+      warnings: [`HTTP_${response.status}`],
     };
   }
 
