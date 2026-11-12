@@ -51,7 +51,7 @@ export default function LoginPage() {
     }
 
     push(`Selamat datang, ${result.data?.store.name ?? "warung"}.`);
-    const isAdmin = (result.data?.tenants && result.data.tenants.length > 0) || cleanEmail.includes("admin");
+    const isAdmin = cleanEmail.toLowerCase().includes("admin");
     router.push(isAdmin ? "/admin" : "/app/pos");
   };
 

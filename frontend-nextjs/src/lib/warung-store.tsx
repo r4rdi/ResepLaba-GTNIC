@@ -187,9 +187,9 @@ export function WarungProvider({ children }: { children: ReactNode }) {
         const fallback = buildWorkspace(next);
         const demoSnapshot: Snapshot = {
           ...fallback,
-          tenants: seedTenants(),
+          tenants: next === "admin" ? seedTenants() : [],
           broadcasts: seedBroadcasts(),
-          templates: seedTemplates(),
+          templates: next === "admin" ? seedTemplates() : [],
         };
         setSnapshot(demoSnapshot);
         persistToken(`demo-token-${next}`);
@@ -248,9 +248,9 @@ export function WarungProvider({ children }: { children: ReactNode }) {
 
         const finalSnapshot: Snapshot = userSnapshot || {
           ...buildWorkspace(matchedProfile),
-          tenants: seedTenants(),
+          tenants: matchedProfile === "admin" ? seedTenants() : [],
           broadcasts: seedBroadcasts(),
-          templates: seedTemplates(),
+          templates: matchedProfile === "admin" ? seedTemplates() : [],
         };
 
         setSnapshot(finalSnapshot);
@@ -301,9 +301,9 @@ export function WarungProvider({ children }: { children: ReactNode }) {
             whatsapp: payload.whatsapp || "",
             pin: payload.pin || "1234",
           },
-          tenants: seedTenants(),
+          tenants: [],
           broadcasts: seedBroadcasts(),
-          templates: seedTemplates(),
+          templates: [],
         };
 
         setSnapshot(newSnapshot);
